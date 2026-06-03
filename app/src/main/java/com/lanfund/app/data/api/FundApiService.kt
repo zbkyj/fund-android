@@ -4,6 +4,7 @@ import com.lanfund.app.data.model.FundEstimate
 import com.google.gson.Gson
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.CookieJar
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -35,6 +36,17 @@ class FundApiService {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .cookieJar(object : CookieJar {
+                private val cookieStore = mutableMapOf<String, MutableList<okhttp3.Cookie>>()
+
+                override fun saveFromResponse(url: okhttp3.HttpUrl, cookies: MutableList<okhttp3.Cookie>) {
+                    cookieStore.getOrPut(url.host) { mutableListOf() }.addAll(cookies)
+                }
+
+                override fun loadForRequest(url: okhttp3.HttpUrl): MutableList<okhttp3.Cookie> {
+                    return cookieStore[url.host]?.toMutableList() ?: mutableListOf()
+                }
+            })
             .build()
     }
 
@@ -196,7 +208,7 @@ class FundApiService {
             val lastData = list.getJSONObject(list.length() - 1)
             val time = SimpleDateFormat("HH:mm", Locale.getDefault())
                 .format(Date(lastData.optLong("time")))
-            val forecastGrowth = formatGrowth(lastData.optDouble("forecastGrowth").toString())
+            val forecastGrowth = String.format("%.2f%%", lastData.optDouble("forecastGrowth") * 100)
 
             // 获取近30天数据
             val monthlyData = getMonthlyData(fundKey)
