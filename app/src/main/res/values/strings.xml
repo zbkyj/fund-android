@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LanFund</string>
+    <string name="fund_tab">基金</string>
+    <string name="market_tab">行情</string>
+    <string name="settings_tab">设置</string>
+    <string name="add_fund">添加基金</string>
+    <string name="delete_fund">删除基金</string>
+    <string name="set_shares">设置份额</string>
+    <string name="mark_hold">标记持有</string>
+    <string name="no_funds">暂无基金</string>
+    <string name="add_fund_hint">点击右下角 + 添加基金</string>
+    <string name="loading">加载中...</string>
+    <string name="error_network">网络错误</string>
+    <string name="error_init">初始化失败</string>
+</resources>
