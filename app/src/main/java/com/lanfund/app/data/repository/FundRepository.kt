@@ -162,11 +162,13 @@ class FundRepository(private val context: Context) {
      * 获取基金估算数据列表
      */
     suspend fun getFundEstimates(): List<FundEstimate> {
-        if (!isInitialized && !initialize()) {
-            return emptyList()
+        val funds = getSavedFunds()
+        if (funds.isEmpty()) return emptyList()
+
+        if (!isInitialized) {
+            initialize()
         }
 
-        val funds = getSavedFunds()
         val estimates = mutableListOf<FundEstimate>()
 
         for (fund in funds) {
@@ -179,10 +181,24 @@ class FundRepository(private val context: Context) {
                         shares = fund.shares
                     )
                 )
+            } else {
+                estimates.add(
+                    FundEstimate(
+                        code = fund.code,
+                        name = fund.name,
+                        time = "N/A",
+                        netValue = "N/A",
+                        estimateGrowth = "N/A",
+                        dayGrowth = "N/A",
+                        consecutive = "N/A",
+                        monthly = "N/A",
+                        isHold = fund.isHold,
+                        shares = fund.shares
+                    )
+                )
             }
         }
 
-        // 按估算涨幅排序
         return estimates.sortedByDescending {
             it.estimateGrowth.replace("%", "").toDoubleOrNull() ?: 0.0
         }
@@ -192,8 +208,8 @@ class FundRepository(private val context: Context) {
      * 获取单个基金估算数据
      */
     suspend fun getFundEstimate(fund: Fund): FundEstimate? {
-        if (!isInitialized && !initialize()) {
-            return null
+        if (!isInitialized) {
+            initialize()
         }
 
         val estimate = apiService.getFundEstimate(fund.code, fund.fundKey)
