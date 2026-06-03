@@ -106,6 +106,10 @@ class FundApiService {
 
             val response = client.newCall(request).execute()
 
+            if (!response.isSuccessful) {
+                return@withContext null
+            }
+
             val responseBody = response.body?.string() ?: "{}"
             val json = JSONObject(responseBody)
 

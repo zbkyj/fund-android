@@ -57,8 +57,8 @@ class FundRepository(private val context: Context) {
      * 添加基金
      */
     suspend fun addFund(fundCode: String): Fund? {
-        if (!isInitialized) {
-            initialize()
+        if (!isInitialized && !initialize()) {
+            return null
         }
 
         val fundInfo = apiService.searchFund(fundCode) ?: return null
@@ -84,8 +84,8 @@ class FundRepository(private val context: Context) {
      * 批量添加基金
      */
     suspend fun addFunds(fundCodes: List<String>): Pair<Int, Int> {
-        if (!isInitialized) {
-            initialize()
+        if (!isInitialized && !initialize()) {
+            return Pair(0, fundCodes.size)
         }
 
         val currentFunds = getSavedFunds().toMutableList()
@@ -162,8 +162,8 @@ class FundRepository(private val context: Context) {
      * 获取基金估算数据列表
      */
     suspend fun getFundEstimates(): List<FundEstimate> {
-        if (!isInitialized) {
-            initialize()
+        if (!isInitialized && !initialize()) {
+            return emptyList()
         }
 
         val funds = getSavedFunds()
@@ -192,8 +192,8 @@ class FundRepository(private val context: Context) {
      * 获取单个基金估算数据
      */
     suspend fun getFundEstimate(fund: Fund): FundEstimate? {
-        if (!isInitialized) {
-            initialize()
+        if (!isInitialized && !initialize()) {
+            return null
         }
 
         val estimate = apiService.getFundEstimate(fund.code, fund.fundKey)
