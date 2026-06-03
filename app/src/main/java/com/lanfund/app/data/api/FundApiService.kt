@@ -45,8 +45,11 @@ class FundApiService {
         try {
             val request = Request.Builder()
                 .url("$fund123BaseUrl/fund")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-                .header("Accept", "text/html,application/xhtml+xml")
+                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
+                .header("Accept-Language", "zh-CN,zh;q=0.9")
+                .header("Connection", "keep-alive")
+                .header("Upgrade-Insecure-Requests", "1")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -78,21 +81,19 @@ class FundApiService {
             val jsonBody = """{"fundCode":"$trimmedCode"}""".toRequestBody(JSON_MEDIA_TYPE)
 
             val request = Request.Builder()
-                .url("$fund123BaseUrl/api/fund/searchFund")
+                .url("$fund123BaseUrl/api/fund/searchFund?_csrf=$csrfToken")
                 .post(jsonBody)
                 .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
+                .header("Accept", "application/json, text/plain, */*")
+                .header("Accept-Language", "zh-CN,zh;q=0.9")
                 .header("Origin", fund123BaseUrl)
                 .header("Referer", "$fund123BaseUrl/fund")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("X-API-Key", "foobar")
                 .build()
 
             val response = client.newCall(request).execute()
-            
-            if (!response.isSuccessful) {
-                return@withContext null
-            }
-            
+
             val responseBody = response.body?.string() ?: "{}"
             val json = JSONObject(responseBody)
 
@@ -126,9 +127,13 @@ class FundApiService {
             // 获取基金基本信息
             val detailRequest = Request.Builder()
                 .url("$fund123BaseUrl/matiaria?fundCode=$fundCode")
-                .header("Accept", "application/json")
+                .header("Accept", "application/json, text/plain, */*")
+                .header("Accept-Language", "zh-CN,zh;q=0.9")
+                .header("Connection", "keep-alive")
+                .header("Origin", fund123BaseUrl)
                 .header("Referer", "$fund123BaseUrl/fund")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("X-API-Key", "foobar")
                 .build()
 
             val detailResponse = client.newCall(detailRequest).execute()
@@ -156,13 +161,15 @@ class FundApiService {
             """.trimIndent().toRequestBody(JSON_MEDIA_TYPE)
 
             val estimateRequest = Request.Builder()
-                .url("$fund123BaseUrl/api/fund/queryFundEstimateIntraday")
+                .url("$fund123BaseUrl/api/fund/queryFundEstimateIntraday?_csrf=$csrfToken")
                 .post(estimateJsonBody)
                 .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
+                .header("Accept", "application/json, text/plain, */*")
+                .header("Accept-Language", "zh-CN,zh;q=0.9")
                 .header("Origin", fund123BaseUrl)
                 .header("Referer", "$fund123BaseUrl/fund")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("X-API-Key", "foobar")
                 .build()
 
             val estimateResponse = client.newCall(estimateRequest).execute()
@@ -218,13 +225,15 @@ class FundApiService {
             val jsonBody = """{"productId": "$fundKey", "dateInterval": "ONE_MONTH"}""".toRequestBody(JSON_MEDIA_TYPE)
 
             val request = Request.Builder()
-                .url("$fund123BaseUrl/api/fund/queryFundQuotationCurves")
+                .url("$fund123BaseUrl/api/fund/queryFundQuotationCurves?_csrf=$csrfToken")
                 .post(jsonBody)
                 .header("Content-Type", "application/json")
-                .header("Accept", "application/json")
+                .header("Accept", "application/json, text/plain, */*")
+                .header("Accept-Language", "zh-CN,zh;q=0.9")
                 .header("Origin", fund123BaseUrl)
                 .header("Referer", "$fund123BaseUrl/fund")
-                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                .header("X-API-Key", "foobar")
                 .build()
 
             val response = client.newCall(request).execute()
