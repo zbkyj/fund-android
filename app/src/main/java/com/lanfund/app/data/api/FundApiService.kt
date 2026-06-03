@@ -1,15 +1,14 @@
 package com.lanfund.app.data.api
 
 import com.lanfund.app.data.model.FundEstimate
-import com.lanfund.app.data.model.MarketIndex
 import com.google.gson.Gson
-import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
-import java.io.IOException
 import java.security.cert.X509Certificate
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -27,6 +26,7 @@ class FundApiService {
 
     private val client: OkHttpClient
     private val gson = Gson()
+    private val JSON_MEDIA_TYPE = "application/json".toMediaType()
 
     // CSRF token (从fund123.cn获取)
     private var csrfToken: String = ""
@@ -85,12 +85,11 @@ class FundApiService {
      */
     suspend fun searchFund(fundCode: String): FundInfo? = withContext(Dispatchers.IO) {
         try {
+            val jsonBody = """{"fundCode":"$fundCode"}""".toRequestBody(JSON_MEDIA_TYPE)
+
             val request = Request.Builder()
                 .url("$fund123BaseUrl/api/fund/searchFund?_csrf=$csrfToken")
-                .post(
-                    okhttp3.MediaType.parse("application/json"),
-                    """{"fundCode":"$fundCode"}"""
-                )
+                .post(jsonBody)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .header("Origin", fund123BaseUrl)
@@ -143,21 +142,20 @@ class FundApiService {
                 Date(System.currentTimeMillis() + 86400000)
             )
 
+            val estimateJsonBody = """
+                {
+                    "startTime": "$today",
+                    "endTime": "$tomorrow",
+                    "limit": 200,
+                    "productId": "$fundKey",
+                    "format": true,
+                    "source": "WEALTHBFFWEB"
+                }
+            """.trimIndent().toRequestBody(JSON_MEDIA_TYPE)
+
             val estimateRequest = Request.Builder()
                 .url("$fund123BaseUrl/api/fund/queryFundEstimateIntraday?_csrf=$csrfToken")
-                .post(
-                    okhttp3.MediaType.parse("application/json"),
-                    """
-                    {
-                        "startTime": "$today",
-                        "endTime": "$tomorrow",
-                        "limit": 200,
-                        "productId": "$fundKey",
-                        "format": true,
-                        "source": "WEALTHBFFWEB"
-                    }
-                    """.trimIndent()
-                )
+                .post(estimateJsonBody)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .header("Origin", fund123BaseUrl)
@@ -215,12 +213,11 @@ class FundApiService {
      */
     private suspend fun getMonthlyData(fundKey: String): Pair<String, String> = withContext(Dispatchers.IO) {
         try {
+            val jsonBody = """{"productId": "$fundKey", "dateInterval": "ONE_MONTH"}""".toRequestBody(JSON_MEDIA_TYPE)
+
             val request = Request.Builder()
                 .url("$fund123BaseUrl/api/fund/queryFundQuotationCurves?_csrf=$csrfToken")
-                .post(
-                    okhttp3.MediaType.parse("application/json"),
-                    """{"productId": "$fundKey", "dateInterval": "ONE_MONTH"}"""
-                )
+                .post(jsonBody)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
                 .header("Origin", fund123BaseUrl)
@@ -252,15 +249,15 @@ class FundApiService {
             // 计算涨/跌天数
             var riseDays = 0
             var lastRate = fundPoints[0].optDouble("rate")
-            val growthList = mutableListOf<String>()
+            val growthList = mutableListOf<Pair<String, Double>>()
 
             for (i in 1 until fundPoints.size) {
                 val nowRate = fundPoints[i].optDouble("rate")
                 if (nowRate >= lastRate) {
-                    growthList.add("涨,$nowRate")
+                    growthList.add(Pair("涨", nowRate))
                     riseDays++
                 } else {
-                    growthList.add("跌,$nowRate")
+                    growthList.add(Pair("跌", nowRate))
                 }
                 lastRate = nowRate
             }
@@ -268,25 +265,25 @@ class FundApiService {
             // 计算连涨/跌
             val growthListReversed = growthList.reversed()
             var consecutiveCount = 1
-            var startRate = growthListReversed[0].split(",")[1].toDoubleOrNull() ?: 0.0
+            var startRate = growthListReversed[0].second
             var endRate = 0.0
+            val firstType = growthListReversed[0].first
 
             for (i in 1 until growthListReversed.size) {
-                if (growthListReversed[i][0] == growthListReversed[0][0]) {
+                if (growthListReversed[i].first == firstType) {
                     consecutiveCount++
                 } else {
-                    endRate = growthListReversed[i].split(",")[1].toDoubleOrNull() ?: 0.0
+                    endRate = growthListReversed[i].second
                     break
                 }
             }
 
-            val startRatePercent = String.format("%.2f", startRate * 100)
             val consecutiveGrowth = String.format("%.2f", (startRate - endRate) * 100)
             val monthlyTotal = growthList.size
             val monthlyPercent = String.format("%.2f", startRate * 100)
 
             Pair(
-                "$consecutiveCount天 $consecutiveGrowth%",
+                "${consecutiveCount}天 $consecutiveGrowth%",
                 "$riseDays/$monthlyTotal $monthlyPercent%"
             )
         } catch (e: Exception) {
