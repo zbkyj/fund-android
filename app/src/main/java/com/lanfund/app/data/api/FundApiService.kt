@@ -327,16 +327,12 @@ class FundApiService {
     /**
      * 格式化涨幅
      */
-    private fun formatGrowth(value: Any?): String {
-        if (value == null || value.toString() == "N/A") return "N/A"
+    private fun formatGrowth(value: String): String {
+        if (value == "N/A") return "N/A"
         return try {
-            String.format("%.2f%%", (value as Double))
+            String.format("%.2f%%", value.toDouble())
         } catch (e: Exception) {
-            try {
-                String.format("%.2f%%", value.toString().toDouble())
-            } catch (e2: Exception) {
-                "N/A"
-            }
+            "N/A"
         }
     }
 
