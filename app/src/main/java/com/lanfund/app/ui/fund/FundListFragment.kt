@@ -67,7 +67,7 @@ class FundListFragment : Fragment() {
 
     private fun setupSwipeRefresh() {
         binding.swipeRefresh.setOnRefreshListener {
-            viewModel.refreshEstimates()
+            viewModel.forceRefreshEstimates()
         }
 
         binding.swipeRefresh.setColorSchemeResources(

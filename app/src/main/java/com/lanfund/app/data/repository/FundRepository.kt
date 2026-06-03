@@ -9,6 +9,7 @@ import com.lanfund.app.data.model.Fund
 import com.lanfund.app.data.model.FundEstimate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 /**
  * 基金数据仓库
@@ -20,8 +21,9 @@ class FundRepository(private val context: Context) {
     private val gson = Gson()
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    // CSRF token是否已初始化
     private var isInitialized = false
+    private var lastRefreshTimeMs: Long = 0
+    private var cachedEstimates: List<FundEstimate> = emptyList()
 
     /**
      * 初始化API服务
@@ -70,7 +72,6 @@ class FundRepository(private val context: Context) {
         )
 
         val currentFunds = getSavedFunds().toMutableList()
-        // 检查是否已存在
         if (currentFunds.any { it.code == fundCode }) {
             return null
         }
@@ -159,14 +160,59 @@ class FundRepository(private val context: Context) {
     }
 
     /**
-     * 获取基金估算数据列表
+     * 获取刷新间隔（分钟），默认1分钟
+     */
+    fun getRefreshIntervalMinutes(): Int {
+        return prefs.getInt(KEY_REFRESH_INTERVAL, DEFAULT_REFRESH_INTERVAL)
+    }
+
+    /**
+     * 设置刷新间隔（分钟）
+     */
+    fun setRefreshIntervalMinutes(minutes: Int) {
+        prefs.edit().putInt(KEY_REFRESH_INTERVAL, minutes).apply()
+    }
+
+    /**
+     * 判断是否允许发起网络请求
+     */
+    private fun shouldRefresh(): Boolean {
+        val now = System.currentTimeMillis()
+        val elapsed = now - lastRefreshTimeMs
+
+        if (elapsed < 60_000) return false
+
+        val cal = Calendar.getInstance()
+        val currentMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val tradingStart = 9 * 60 + 30
+        val tradingEnd = 15 * 60
+
+        val minInterval: Long
+        if (currentMinutes in tradingStart until tradingEnd) {
+            minInterval = getRefreshIntervalMinutes() * 60_000L
+        } else {
+            minInterval = 5 * 60_000L
+        }
+
+        return elapsed >= minInterval
+    }
+
+    /**
+     * 获取基金估算数据列表（含限频逻辑）
      */
     suspend fun getFundEstimates(): List<FundEstimate> {
         val funds = getSavedFunds()
         if (funds.isEmpty()) return emptyList()
 
-        if (!isInitialized) {
+        if (!isInitialized && shouldRefresh()) {
             initialize()
+            if (!isInitialized) {
+                return if (cachedEstimates.isNotEmpty()) cachedEstimates else emptyList()
+            }
+        }
+
+        if (!shouldRefresh() && cachedEstimates.isNotEmpty()) {
+            return cachedEstimates
         }
 
         val estimates = mutableListOf<FundEstimate>()
@@ -199,9 +245,20 @@ class FundRepository(private val context: Context) {
             }
         }
 
+        lastRefreshTimeMs = System.currentTimeMillis()
+        cachedEstimates = estimates
+
         return estimates.sortedByDescending {
             it.estimateGrowth.replace("%", "").toDoubleOrNull() ?: 0.0
         }
+    }
+
+    /**
+     * 强制刷新（忽略限频，用于下拉刷新）
+     */
+    suspend fun forceRefreshEstimates(): List<FundEstimate> {
+        lastRefreshTimeMs = 0
+        return getFundEstimates()
     }
 
     /**
@@ -223,6 +280,8 @@ class FundRepository(private val context: Context) {
     companion object {
         private const val PREFS_NAME = "lanfund_prefs"
         private const val KEY_FUNDS = "saved_funds"
+        private const val KEY_REFRESH_INTERVAL = "refresh_interval_minutes"
+        private const val DEFAULT_REFRESH_INTERVAL = 1
 
         @Volatile
         private var instance: FundRepository? = null

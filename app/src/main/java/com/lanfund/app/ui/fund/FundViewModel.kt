@@ -55,7 +55,7 @@ class FundViewModel(private val repository: FundRepository) : ViewModel() {
     }
 
     /**
-     * 刷新基金估算数据
+     * 刷新基金估算数据（受限频控制）
      */
     fun refreshEstimates() {
         viewModelScope.launch {
@@ -64,6 +64,25 @@ class FundViewModel(private val repository: FundRepository) : ViewModel() {
 
             try {
                 val estimateList = repository.getFundEstimates()
+                _estimates.value = estimateList
+            } catch (e: Exception) {
+                _error.value = e.message ?: "获取数据失败"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * 强制刷新（忽略限频，用于下拉刷新）
+     */
+    fun forceRefreshEstimates() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                val estimateList = repository.forceRefreshEstimates()
                 _estimates.value = estimateList
             } catch (e: Exception) {
                 _error.value = e.message ?: "获取数据失败"
@@ -84,7 +103,7 @@ class FundViewModel(private val repository: FundRepository) : ViewModel() {
                 if (fund != null) {
                     loadFunds()
                     callback(true, "添加成功")
-                    refreshEstimates()
+                    forceRefreshEstimates()
                 } else {
                     callback(false, "添加失败，基金代码可能不存在")
                 }
@@ -105,7 +124,7 @@ class FundViewModel(private val repository: FundRepository) : ViewModel() {
             try {
                 val (successCount, failCount) = repository.addFunds(fundCodes)
                 loadFunds()
-                refreshEstimates()
+                forceRefreshEstimates()
                 
                 if (successCount > 0 && failCount == 0) {
                     callback(true, "全部添加成功，共 $successCount 只基金")
@@ -129,7 +148,7 @@ class FundViewModel(private val repository: FundRepository) : ViewModel() {
         viewModelScope.launch {
             repository.removeFund(fundCode)
             loadFunds()
-            refreshEstimates()
+            forceRefreshEstimates()
         }
     }
 
@@ -139,7 +158,7 @@ class FundViewModel(private val repository: FundRepository) : ViewModel() {
     fun updateShares(fundCode: String, shares: Double) {
         repository.updateFundShares(fundCode, shares)
         loadFunds()
-        refreshEstimates()
+        forceRefreshEstimates()
     }
 
     /**

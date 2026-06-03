@@ -2,22 +2,73 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:padding="24dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="设置"
-        android:textColor="@color/text_secondary"
-        android:textSize="18sp" />
+        android:text="刷新设置"
+        android:textColor="@color/text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="功能开发中..."
+        android:layout_marginTop="8dp"
+        android:text="交易时段（9:30-15:00）数据刷新间隔"
         android:textColor="@color/text_secondary"
         android:textSize="14sp" />
+
+    <RadioGroup
+        android:id="@+id/rg_refresh_interval"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp">
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/rb_1min"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1 分钟"
+            android:textSize="16sp"
+            android:padding="12dp" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/rb_5min"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="5 分钟"
+            android:textSize="16sp"
+            android:padding="12dp" />
+
+        <com.google.android.material.radiobutton.MaterialRadioButton
+            android:id="@+id/rb_10min"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="10 分钟"
+            android:textSize="16sp"
+            android:padding="12dp" />
+
+    </RadioGroup>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="说明"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="1. 两次刷新间隔至少1分钟\n2. 非交易时段（15:00-次日9:30）最少间隔5分钟\n3. 下拉列表可强制刷新"
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp"
+        android:lineSpacingExtra="4dp" />
 
 </LinearLayout>
