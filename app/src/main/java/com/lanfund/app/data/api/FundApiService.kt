@@ -39,12 +39,12 @@ class FundApiService {
             .cookieJar(object : CookieJar {
                 private val cookieStore = mutableMapOf<String, MutableList<okhttp3.Cookie>>()
 
-                override fun saveFromResponse(url: okhttp3.HttpUrl, cookies: MutableList<okhttp3.Cookie>) {
+                override fun saveFromResponse(url: okhttp3.HttpUrl, cookies: List<okhttp3.Cookie>) {
                     cookieStore.getOrPut(url.host) { mutableListOf() }.addAll(cookies)
                 }
 
-                override fun loadForRequest(url: okhttp3.HttpUrl): MutableList<okhttp3.Cookie> {
-                    return cookieStore[url.host]?.toMutableList() ?: mutableListOf()
+                override fun loadForRequest(url: okhttp3.HttpUrl): List<okhttp3.Cookie> {
+                    return cookieStore[url.host]?.toList() ?: emptyList()
                 }
             })
             .build()
