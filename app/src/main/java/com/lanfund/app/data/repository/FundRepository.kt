@@ -81,6 +81,51 @@ class FundRepository(private val context: Context) {
     }
 
     /**
+     * 批量添加基金
+     */
+    suspend fun addFunds(fundCodes: List<String>): Pair<Int, Int> {
+        if (!isInitialized) {
+            initialize()
+        }
+
+        val currentFunds = getSavedFunds().toMutableList()
+        var successCount = 0
+        var failCount = 0
+
+        for (fundCode in fundCodes) {
+            val trimmedCode = fundCode.trim()
+            if (trimmedCode.length != 6) {
+                failCount++
+                continue
+            }
+
+            if (currentFunds.any { it.code == trimmedCode }) {
+                failCount++
+                continue
+            }
+
+            val fundInfo = apiService.searchFund(trimmedCode)
+            if (fundInfo != null) {
+                val fund = Fund(
+                    code = trimmedCode,
+                    name = fundInfo.name,
+                    fundKey = fundInfo.key
+                )
+                currentFunds.add(fund)
+                successCount++
+            } else {
+                failCount++
+            }
+        }
+
+        if (successCount > 0) {
+            saveFunds(currentFunds)
+        }
+
+        return Pair(successCount, failCount)
+    }
+
+    /**
      * 删除基金
      */
     fun removeFund(fundCode: String) {

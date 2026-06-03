@@ -84,10 +84,35 @@ class FundViewModel(private val repository: FundRepository) : ViewModel() {
                 if (fund != null) {
                     loadFunds()
                     callback(true, "添加成功")
-                    // 添加后刷新数据
                     refreshEstimates()
                 } else {
                     callback(false, "添加失败，基金代码可能不存在")
+                }
+            } catch (e: Exception) {
+                callback(false, e.message ?: "添加失败")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * 批量添加基金
+     */
+    fun addFunds(fundCodes: List<String>, callback: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val (successCount, failCount) = repository.addFunds(fundCodes)
+                loadFunds()
+                refreshEstimates()
+                
+                if (successCount > 0 && failCount == 0) {
+                    callback(true, "全部添加成功，共 $successCount 只基金")
+                } else if (successCount > 0 && failCount > 0) {
+                    callback(true, "成功添加 $successCount 只，失败 $failCount 只")
+                } else {
+                    callback(false, "添加失败，所有基金代码都无效或已存在")
                 }
             } catch (e: Exception) {
                 callback(false, e.message ?: "添加失败")

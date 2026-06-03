@@ -7,6 +7,8 @@ import androidx.fragment.app.commit
 import com.lanfund.app.R
 import com.lanfund.app.databinding.ActivityMainBinding
 import com.lanfund.app.ui.fund.FundListFragment
+import com.lanfund.app.ui.market.MarketFragment
+import com.lanfund.app.ui.settings.SettingsFragment
 
 /**
  * 主Activity
@@ -35,10 +37,12 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.nav_market -> {
+                    loadFragment(MarketFragment())
                     supportActionBar?.title = "市场行情"
                     true
                 }
                 R.id.nav_settings -> {
+                    loadFragment(SettingsFragment())
                     supportActionBar?.title = "设置"
                     true
                 }

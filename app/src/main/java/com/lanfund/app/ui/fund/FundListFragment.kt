@@ -104,18 +104,26 @@ class FundListFragment : Fragment() {
 
     private fun showAddFundDialog() {
         val editText = EditText(requireContext()).apply {
-            hint = "请输入基金代码"
+            hint = "请输入基金代码（多个代码用逗号或空格分隔）"
             setPadding(48, 32, 48, 32)
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
         }
 
         AlertDialog.Builder(requireContext())
             .setTitle("添加基金")
             .setView(editText)
             .setPositiveButton("添加") { _, _ ->
-                val code = editText.text.toString().trim()
-                if (code.isNotEmpty()) {
-                    viewModel.addFund(code) { success, message ->
-                        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                val input = editText.text.toString().trim()
+                if (input.isNotEmpty()) {
+                    val codes = input.split(Regex("[,，\\s]+")).filter { it.isNotEmpty() }
+                    if (codes.size == 1) {
+                        viewModel.addFund(codes[0]) { success, message ->
+                            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        viewModel.addFunds(codes) { success, message ->
+                            Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
+                        }
                     }
                 }
             }

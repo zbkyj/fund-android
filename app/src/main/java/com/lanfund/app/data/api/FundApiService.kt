@@ -65,14 +65,20 @@ class FundApiService {
     }
 
     /**
-     * 搜索基金
+     * 搜索基金（支持多种格式）
      */
     suspend fun searchFund(fundCode: String): FundInfo? = withContext(Dispatchers.IO) {
         try {
-            val jsonBody = """{"fundCode":"$fundCode"}""".toRequestBody(JSON_MEDIA_TYPE)
+            val trimmedCode = fundCode.trim()
+            
+            if (trimmedCode.length != 6) {
+                return@withContext null
+            }
+
+            val jsonBody = """{"fundCode":"$trimmedCode"}""".toRequestBody(JSON_MEDIA_TYPE)
 
             val request = Request.Builder()
-                .url("$fund123BaseUrl/api/fund/searchFund?_csrf=$csrfToken")
+                .url("$fund123BaseUrl/api/fund/searchFund")
                 .post(jsonBody)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
@@ -82,18 +88,30 @@ class FundApiService {
                 .build()
 
             val response = client.newCall(request).execute()
-            val json = JSONObject(response.body?.string() ?: "{}")
+            
+            if (!response.isSuccessful) {
+                return@withContext null
+            }
+            
+            val responseBody = response.body?.string() ?: "{}"
+            val json = JSONObject(responseBody)
 
             if (json.optBoolean("success", false)) {
                 val fundInfo = json.optJSONObject("fundInfo")
                 fundInfo?.let {
-                    FundInfo(
-                        key = it.optString("key"),
-                        code = fundCode,
-                        name = it.optString("fundName")
-                    )
+                    val key = it.optString("key")
+                    val name = it.optString("fundName")
+                    if (key.isNotEmpty() && name.isNotEmpty()) {
+                        return@withContext FundInfo(
+                            key = key,
+                            code = trimmedCode,
+                            name = name
+                        )
+                    }
                 }
-            } else null
+            }
+            
+            null
         } catch (e: Exception) {
             e.printStackTrace()
             null
@@ -138,7 +156,7 @@ class FundApiService {
             """.trimIndent().toRequestBody(JSON_MEDIA_TYPE)
 
             val estimateRequest = Request.Builder()
-                .url("$fund123BaseUrl/api/fund/queryFundEstimateIntraday?_csrf=$csrfToken")
+                .url("$fund123BaseUrl/api/fund/queryFundEstimateIntraday")
                 .post(estimateJsonBody)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
@@ -200,7 +218,7 @@ class FundApiService {
             val jsonBody = """{"productId": "$fundKey", "dateInterval": "ONE_MONTH"}""".toRequestBody(JSON_MEDIA_TYPE)
 
             val request = Request.Builder()
-                .url("$fund123BaseUrl/api/fund/queryFundQuotationCurves?_csrf=$csrfToken")
+                .url("$fund123BaseUrl/api/fund/queryFundQuotationCurves")
                 .post(jsonBody)
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json")
